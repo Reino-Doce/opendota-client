@@ -6,7 +6,7 @@ const decimalIdFields = new Set<string>(runtimeOverrides.decimalIdProperties);
 
 interface JsonParseOptions {
     readonly decimalIdArrayResponse?: boolean;
-    readonly decimalIdProperties?: readonly string[];
+    readonly decimalIdRootProperties?: readonly string[];
 }
 
 export function parseLosslessJson(text: string, options: JsonParseOptions = {}): JsonValue {
@@ -21,13 +21,20 @@ export function parseLosslessJson(text: string, options: JsonParseOptions = {}):
     } catch {
         throw new OpenDotaError({ code: 'invalid-response' });
     }
-    const responseDecimalIdFields = options.decimalIdProperties?.length
-        ? new Set([...decimalIdFields, ...options.decimalIdProperties])
-        : decimalIdFields;
     if (options.decimalIdArrayResponse && Array.isArray(parsed)) {
-        return parsed.map((entry) => normalizeDecimalIdArrayEntry(entry, responseDecimalIdFields)) as JsonValue;
+        return parsed.map((entry) => normalizeDecimalIdArrayEntry(entry, decimalIdFields)) as JsonValue;
     }
-    return normalizeIdentifiers(parsed, undefined, responseDecimalIdFields) as JsonValue;
+    const normalized = normalizeIdentifiers(parsed, undefined, decimalIdFields);
+    if (!options.decimalIdRootProperties?.length || normalized === null || Array.isArray(normalized) || typeof normalized !== 'object') {
+        return normalized as JsonValue;
+    }
+    const normalizedObject = normalized as Record<string, unknown>;
+    for (const property of options.decimalIdRootProperties) {
+        if (Object.hasOwn(normalizedObject, property)) {
+            normalizedObject[property] = normalizeDecimalIdValue(normalizedObject[property]);
+        }
+    }
+    return normalized as JsonValue;
 }
 
 function normalizeIdentifiers(value: unknown, key?: string, idFields: ReadonlySet<string> = decimalIdFields): unknown {
@@ -40,8 +47,12 @@ function normalizeIdentifiers(value: unknown, key?: string, idFields: ReadonlySe
             normalizeIdentifiers(child, childKey, idFields),
         ]));
     }
-    if (value === null || key === undefined) return value;
-    if (!idFields.has(key) || typeof value !== 'number' && typeof value !== 'string') return value;
+    if (value === null || key === undefined || !idFields.has(key)) return value;
+    return normalizeDecimalIdValue(value);
+}
+
+function normalizeDecimalIdValue(value: unknown): unknown {
+    if (typeof value !== 'number' && typeof value !== 'string') return value;
     const decimal = String(value);
     return /^\d+$/.test(decimal) ? decimal : value;
 }

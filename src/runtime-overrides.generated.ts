@@ -20,7 +20,7 @@ export const runtimeOverrides = {
     "leagueid",
     "jobId"
   ],
-  "decimalIdResponseProperties": {
+  "decimalIdRootResponseProperties": {
     "/request/{jobId}": [
       "id"
     ]

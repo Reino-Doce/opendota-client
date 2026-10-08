@@ -181,7 +181,7 @@ const generatedPaths = `${astToString(generatedAst).replaceAll('"', "'").trimEnd
 const generatedOperations = `export const apiContractVersion = ${JSON.stringify(contract.version)};\n\nexport const supportedOperations = ${JSON.stringify(operations, null, 2)} as const;\n`;
 const generatedRuntimeOverrides = `export const runtimeOverrides = ${JSON.stringify({
     decimalIdProperties: overrides.decimalIdProperties,
-    decimalIdResponseProperties: overrides.decimalIdResponseProperties,
+    decimalIdRootResponseProperties: overrides.decimalIdRootResponseProperties,
     decimalIdArrayResponses: overrides.decimalIdArrayResponses,
     numericBooleanQueryParameters: overrides.numericBooleanQueryParameters,
     omitFalseQueryParameters: overrides.omitFalseQueryParameters,

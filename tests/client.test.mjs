@@ -347,7 +347,7 @@ test('rejects numeric parsing-job identifiers before issuing a request', async (
 test('normalizes parse-job status IDs without changing ordinary id fields', async () => {
     const responses = [
         Response.json({ job: { jobId: 123 } }),
-        Response.json({ id: 123, jobId: 123, state: 'completed' }),
+        Response.json({ id: 123, jobId: 123, state: 'completed', data: { id: 7, extension: [{ id: 9 }] } }),
         Response.json({ id: 123 }),
     ];
     const client = clientWith(async () => responses.shift());
@@ -356,7 +356,12 @@ test('normalizes parse-job status IDs without changing ordinary id fields', asyn
         assert.equal(submitted.data.job.jobId, '123');
 
         const status = await client.get('/request/{jobId}', { path: { jobId: submitted.data.job.jobId } });
-        assert.deepEqual(status.data, { id: '123', jobId: '123', state: 'completed' });
+        assert.deepEqual(status.data, {
+            id: '123',
+            jobId: '123',
+            state: 'completed',
+            data: { id: 7, extension: [{ id: 9 }] },
+        });
 
         const ordinaryId = await client.get('/metadata', {});
         assert.equal(ordinaryId.data.id, 123);

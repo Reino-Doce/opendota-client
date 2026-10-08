@@ -27,7 +27,7 @@
     "leagueid",
     "jobId"
   ],
-  "decimalIdResponseProperties": {
+  "decimalIdRootResponseProperties": {
     "/request/{jobId}": ["id"]
   },
   "arrayParameters": {

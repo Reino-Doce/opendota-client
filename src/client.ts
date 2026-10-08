@@ -431,7 +431,7 @@ export class OpenDotaClient {
             }
             const data = parseLosslessJson(raw, {
                 decimalIdArrayResponse: decimalIdArrayPaths.has(path),
-                decimalIdProperties: runtimeOverrides.decimalIdResponseProperties[path as keyof typeof runtimeOverrides.decimalIdResponseProperties],
+                decimalIdRootProperties: runtimeOverrides.decimalIdRootResponseProperties[path as keyof typeof runtimeOverrides.decimalIdRootResponseProperties],
             });
             return {
                 data,
