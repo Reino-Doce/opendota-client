@@ -11,6 +11,7 @@ const lockUrl = new URL('spec/operations.lock.json', root);
 const overridesUrl = new URL('spec/overrides.json', root);
 const pathsUrl = new URL('src/openapi.generated.ts', root);
 const operationsUrl = new URL('src/operations.generated.ts', root);
+const runtimeOverridesUrl = new URL('src/runtime-overrides.generated.ts', root);
 const operationDocsUrl = new URL('docs/operations.md', root);
 const isCheck = process.argv.includes('--check');
 
@@ -53,7 +54,8 @@ const decimalIdArrayParameters = new Set(overrides.decimalIdArrayParameters);
 
 function markSchema(schema, propertyName = undefined) {
     if (!schema || typeof schema !== 'object') return;
-    if (schema.type === 'object' && !schema.properties && schema.additionalProperties === undefined) {
+    const hasNoProperties = !schema.properties || Object.keys(schema.properties).length === 0;
+    if (schema.type === 'object' && hasNoProperties && schema.additionalProperties === undefined) {
         schema.additionalProperties = true;
     }
     if (propertyName && decimalIds.has(propertyName) && schema.type === 'integer') {
@@ -95,6 +97,9 @@ for (const [path, pathItem] of Object.entries(patchedSpec.paths)) {
     for (const method of ['get', 'post']) {
         const operation = pathItem[method];
         if (!operation) continue;
+        for (const response of Object.values(operation.responses ?? {})) {
+            for (const media of Object.values(response.content ?? {})) markSchema(media.schema);
+        }
         operation.parameters = (operation.parameters ?? []).filter((parameter) => {
             const parameterName = parameter.$ref?.split('/').at(-1);
             return !overrides.removeParameters[path]?.includes(parameterName);
@@ -168,6 +173,13 @@ const generatedAst = await openapiTS(patchedSpec, {
 });
 const generatedPaths = `${astToString(generatedAst).replaceAll('"', "'").trimEnd()}\n`;
 const generatedOperations = `export const apiContractVersion = ${JSON.stringify(contract.version)};\n\nexport const supportedOperations = ${JSON.stringify(operations, null, 2)} as const;\n`;
+const generatedRuntimeOverrides = `export const runtimeOverrides = ${JSON.stringify({
+    decimalIdArrayResponses: overrides.decimalIdArrayResponses,
+    numericBooleanQueryParameters: overrides.numericBooleanQueryParameters,
+    omitFalseQueryParameters: overrides.omitFalseQueryParameters,
+    requiredQueryParameters: overrides.requiredQueryParameters,
+    stringPathParameters: overrides.stringPathParameters,
+}, null, 2)} as const;\n`;
 const generatedOperationDocs = [
     '# OpenDota operation index',
     '',
@@ -192,5 +204,6 @@ async function emit(url, contents) {
 
 await emit(pathsUrl, generatedPaths);
 await emit(operationsUrl, generatedOperations);
+await emit(runtimeOverridesUrl, generatedRuntimeOverrides);
 await emit(operationDocsUrl, generatedOperationDocs);
 process.stdout.write(`${isCheck ? 'Checked' : 'Generated'} ${operations.length} operations from OpenDota ${contract.version}.\n`);

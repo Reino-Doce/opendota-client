@@ -2910,7 +2910,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': Record<string, never>;
+                    'application/json; charset=utf-8': {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };
@@ -2935,7 +2937,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': Record<string, never>[];
+                    'application/json; charset=utf-8': {
+                        [key: string]: unknown;
+                    }[];
                 };
             };
         };
@@ -2955,7 +2959,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': Record<string, never>;
+                    'application/json; charset=utf-8': {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };
@@ -3242,7 +3248,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': Record<string, never>[];
+                    'application/json; charset=utf-8': {
+                        [key: string]: unknown;
+                    }[];
                 };
             };
         };
@@ -3512,7 +3520,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': Record<string, never>[];
+                    'application/json; charset=utf-8': {
+                        [key: string]: unknown;
+                    }[];
                 };
             };
         };
@@ -4165,7 +4175,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': Record<string, never>;
+                    'application/json; charset=utf-8': {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };
@@ -4187,7 +4199,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': Record<string, never>;
+                    'application/json; charset=utf-8': {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };

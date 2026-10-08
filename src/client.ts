@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { OpenDotaError } from './errors.js';
 import { parseLosslessJson } from './json.js';
+import { runtimeOverrides } from './runtime-overrides.generated.js';
 import { RequestQueue } from './request-queue.js';
 import { apiContractVersion, supportedOperations } from './operations.generated.js';
 import type {
@@ -47,10 +48,9 @@ const identityPathKeys = new Set([
     'team_id', 'league_id', 'leagueid',
 ]);
 const transientStatusCodes = new Set([408, 425, 429, 500, 502, 503, 504]);
-const requiredQueryOverrides: Record<string, readonly string[]> = { '/explorer': ['sql'] };
-const decimalIdArrayPaths = new Set(['/leagues/{league_id}/matchIds']);
-const omitFalseQueryKeys = new Set(['turbo']);
-const numericBooleanQueryKeys = new Set(['win', 'is_radiant']);
+const decimalIdArrayPaths = new Set<string>(runtimeOverrides.decimalIdArrayResponses);
+const omitFalseQueryKeys = new Set<string>(runtimeOverrides.omitFalseQueryParameters);
+const numericBooleanQueryKeys = new Set<string>(runtimeOverrides.numericBooleanQueryParameters);
 
 function abortError(signal: AbortSignal, operationId: string, deadlineExpired: boolean): OpenDotaError {
     return new OpenDotaError({
@@ -94,11 +94,15 @@ function serializeQuery(query: Record<string, unknown>): URLSearchParams {
 function buildRoute(path: string, parameters: Record<string, unknown> | undefined): string {
     const placeholders = [...path.matchAll(/\{([^}]+)\}/g)].map((match) => match[1] ?? '');
     const supplied = parameters ?? {};
+    const stringPathParameters = new Set<string>(runtimeOverrides.stringPathParameters[path as keyof typeof runtimeOverrides.stringPathParameters] ?? []);
     if (placeholders.some((name) => !Object.hasOwn(supplied, name)) || Object.keys(supplied).some((name) => !placeholders.includes(name))) {
         throw new OpenDotaError({ code: 'invalid-input' });
     }
     return path.replaceAll(/\{([^}]+)\}/g, (_match, name: string) => {
-        const value = identityValue(name, supplied[name]);
+        const raw = supplied[name];
+        const value = stringPathParameters.has(name)
+            ? typeof raw === 'string' ? raw : undefined
+            : identityValue(name, raw);
         if (value === undefined) throw new OpenDotaError({ code: 'invalid-input' });
         return encodeURIComponent(String(value));
     });
@@ -230,7 +234,7 @@ export class OpenDotaClient {
         if (options.signal?.aborted) throw new OpenDotaError({ code: 'aborted' });
         const route = buildRoute(path, options.path as Record<string, unknown> | undefined);
         const query = (options.query ?? {}) as Record<string, unknown>;
-        for (const required of requiredQueryOverrides[path] ?? []) {
+        for (const required of runtimeOverrides.requiredQueryParameters[path as keyof typeof runtimeOverrides.requiredQueryParameters] ?? []) {
             if (!Object.hasOwn(query, required) || query[required] === undefined || query[required] === null) {
                 throw new OpenDotaError({ code: 'invalid-input' });
             }

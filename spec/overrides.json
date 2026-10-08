@@ -41,6 +41,9 @@
   "requiredQueryParameters": {
     "/explorer": ["sql"]
   },
+  "stringPathParameters": {
+    "/request/{jobId}": ["jobId"]
+  },
   "parameterTypes": {
     "/benchmarks": { "hero_id": "integer" }
   },

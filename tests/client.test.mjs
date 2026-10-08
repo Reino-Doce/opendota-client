@@ -250,6 +250,38 @@ test('classifies HTTP errors without including credential text or response bodie
     }
 });
 
+test('rejects numeric parsing-job identifiers before issuing a request', async () => {
+    let calls = 0;
+    const client = clientWith(async () => {
+        calls += 1;
+        return Response.json({ state: 'completed' });
+    });
+    try {
+        await assert.rejects(client.get('/request/{jobId}', { path: { jobId: 9007199254740992 } }),
+            (error) => error instanceof OpenDotaError && error.code === 'invalid-input');
+        assert.equal(calls, 0);
+    } finally {
+        client.close();
+    }
+});
+
+test('classifies rejected fetches as safe network errors', async () => {
+    const client = clientWith(async () => {
+        throw new TypeError('private network detail');
+    });
+    try {
+        await assert.rejects(client.get('/metadata', {}), (error) => {
+            assert.ok(error instanceof OpenDotaError);
+            assert.equal(error.code, 'network-error');
+            assert.equal(error.message, 'The OpenDota request failed before receiving a response.');
+            assert.equal(error.message.includes('private network detail'), false);
+            return true;
+        });
+    } finally {
+        client.close();
+    }
+});
+
 test('reports malformed JSON and bounds hanging attempts', async () => {
     const malformed = clientWith(async () => new Response('<html>not json</html>', { status: 200 }));
     try {

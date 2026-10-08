@@ -27,6 +27,16 @@ const explorer = await client.get('/explorer', { query: { sql: 'select 1' } });
 const job = await client.post('/request/{match_id}', { path: { match_id: matchId } });
 const profileRefresh = await client.post('/players/{account_id}/refresh', { path: { account_id: accountId } });
 const status = await client.get('/request/{jobId}', { path: { jobId: 'job-uuid-from-provider' } });
+const health = await client.get('/health', {});
+const live = await client.get('/live', {});
+
+type ArrayEntry<Value> = Value extends readonly (infer Entry)[] ? Entry : unknown;
+type NotEmptyNeverRecord<Value> = [Value] extends [Record<string, never>] ? false : true;
+const explorerResponseCanCarryFields: NotEmptyNeverRecord<typeof explorer.data> = true;
+const healthResponseCanCarryFields: NotEmptyNeverRecord<typeof health.data> = true;
+const liveResponseCanCarryFields: NotEmptyNeverRecord<ArrayEntry<typeof live.data>> = true;
+const jobStatusCanCarryFields: NotEmptyNeverRecord<typeof status.data> = true;
+const findMatchCanCarryFields: NotEmptyNeverRecord<ArrayEntry<typeof found.data>> = true;
 
 const returnedMatchId: string | undefined = matches.data[0]?.match_id;
 const returnedRecentMatchId: string | undefined = recentMatches.data[0]?.match_id;
@@ -43,7 +53,8 @@ const safeError: OpenDotaError | undefined = undefined;
 const responseAlias: ResponseData<'/matches/{match_id}', 'get'> = detail;
 
 void [directRequestOptions, returnedMatchId, returnedRecentMatchId, optionalBenchmarkPercentile, unknownWardResponse, unknownFoundMatch, parsedMatchId,
-    unknownExplorerRows, unknownJobState, parseJobResponse, refreshResponse, safeError, responseAlias];
+    unknownExplorerRows, unknownJobState, parseJobResponse, refreshResponse, safeError, responseAlias, health, live, explorerResponseCanCarryFields,
+    healthResponseCanCarryFields, liveResponseCanCarryFields, jobStatusCanCarryFields, findMatchCanCarryFields];
 
 // @ts-expect-error Account identifiers are decimal strings, not JavaScript numbers.
 client.get('/matches/{match_id}', { path: { match_id: unsafeNumericMatchId } });
