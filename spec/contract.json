@@ -1,0 +1,14 @@
+{
+  "openapi": "3.0.3",
+  "version": "31.1.0",
+  "retrievedDate": "2026-10-08",
+  "sourceRevision": "b87e0659b958c8b34ca9f38ddc3aab2dc2b52f5f",
+  "sourceUrl": "https://api.opendota.com/api",
+  "sourceCommitUrl": "https://github.com/odota/core/commit/b87e0659b958c8b34ca9f38ddc3aab2dc2b52f5f",
+  "sha256": "7ebc07faf989e7e42532d15e4d7660fe2be23b1349eb9f673ad5ac0643161233",
+  "operationCount": 55,
+  "methods": {
+    "GET": 53,
+    "POST": 2
+  }
+}

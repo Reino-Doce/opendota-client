@@ -1,0 +1,222 @@
+{
+  "get_benchmarks": {
+    "method": "GET",
+    "path": "/benchmarks"
+  },
+  "get_constants_by_resource": {
+    "method": "GET",
+    "path": "/constants/{resource}"
+  },
+  "get_distributions": {
+    "method": "GET",
+    "path": "/distributions"
+  },
+  "get_explorer": {
+    "method": "GET",
+    "path": "/explorer"
+  },
+  "get_find_matches": {
+    "method": "GET",
+    "path": "/findMatches"
+  },
+  "get_health": {
+    "method": "GET",
+    "path": "/health"
+  },
+  "get_hero_stats": {
+    "method": "GET",
+    "path": "/heroStats"
+  },
+  "get_heroes": {
+    "method": "GET",
+    "path": "/heroes"
+  },
+  "get_heroes_by_hero_id_select_durations": {
+    "method": "GET",
+    "path": "/heroes/{hero_id}/durations"
+  },
+  "get_heroes_by_hero_id_select_item_popularity": {
+    "method": "GET",
+    "path": "/heroes/{hero_id}/itemPopularity"
+  },
+  "get_heroes_by_hero_id_select_matches": {
+    "method": "GET",
+    "path": "/heroes/{hero_id}/matches"
+  },
+  "get_heroes_by_hero_id_select_matchups": {
+    "method": "GET",
+    "path": "/heroes/{hero_id}/matchups"
+  },
+  "get_heroes_by_hero_id_select_players": {
+    "method": "GET",
+    "path": "/heroes/{hero_id}/players"
+  },
+  "get_leagues": {
+    "method": "GET",
+    "path": "/leagues"
+  },
+  "get_leagues_by_league_id": {
+    "method": "GET",
+    "path": "/leagues/{league_id}"
+  },
+  "get_leagues_by_league_id_select_match_ids": {
+    "method": "GET",
+    "path": "/leagues/{league_id}/matchIds"
+  },
+  "get_leagues_by_league_id_select_matches": {
+    "method": "GET",
+    "path": "/leagues/{league_id}/matches"
+  },
+  "get_leagues_by_league_id_select_teams": {
+    "method": "GET",
+    "path": "/leagues/{league_id}/teams"
+  },
+  "get_live": {
+    "method": "GET",
+    "path": "/live"
+  },
+  "get_matches_by_match_id": {
+    "method": "GET",
+    "path": "/matches/{match_id}"
+  },
+  "get_metadata": {
+    "method": "GET",
+    "path": "/metadata"
+  },
+  "get_parsed_matches": {
+    "method": "GET",
+    "path": "/parsedMatches"
+  },
+  "get_players_by_account_id": {
+    "method": "GET",
+    "path": "/players/{account_id}"
+  },
+  "get_players_by_account_id_histograms_by_field": {
+    "method": "GET",
+    "path": "/players/{account_id}/histograms/{field}"
+  },
+  "get_players_by_account_id_select_counts": {
+    "method": "GET",
+    "path": "/players/{account_id}/counts"
+  },
+  "get_players_by_account_id_select_heroes": {
+    "method": "GET",
+    "path": "/players/{account_id}/heroes"
+  },
+  "get_players_by_account_id_select_matches": {
+    "method": "GET",
+    "path": "/players/{account_id}/matches"
+  },
+  "get_players_by_account_id_select_peers": {
+    "method": "GET",
+    "path": "/players/{account_id}/peers"
+  },
+  "get_players_by_account_id_select_pros": {
+    "method": "GET",
+    "path": "/players/{account_id}/pros"
+  },
+  "get_players_by_account_id_select_rankings": {
+    "method": "GET",
+    "path": "/players/{account_id}/rankings"
+  },
+  "get_players_by_account_id_select_ratings": {
+    "method": "GET",
+    "path": "/players/{account_id}/ratings"
+  },
+  "get_players_by_account_id_select_recent_matches": {
+    "method": "GET",
+    "path": "/players/{account_id}/recentMatches"
+  },
+  "get_players_by_account_id_select_totals": {
+    "method": "GET",
+    "path": "/players/{account_id}/totals"
+  },
+  "get_players_by_account_id_select_wardmap": {
+    "method": "GET",
+    "path": "/players/{account_id}/wardmap"
+  },
+  "get_players_by_account_id_select_wl": {
+    "method": "GET",
+    "path": "/players/{account_id}/wl"
+  },
+  "get_players_by_account_id_select_wordcloud": {
+    "method": "GET",
+    "path": "/players/{account_id}/wordcloud"
+  },
+  "get_pro_matches": {
+    "method": "GET",
+    "path": "/proMatches"
+  },
+  "get_pro_players": {
+    "method": "GET",
+    "path": "/proPlayers"
+  },
+  "get_public_matches": {
+    "method": "GET",
+    "path": "/publicMatches"
+  },
+  "get_rankings": {
+    "method": "GET",
+    "path": "/rankings"
+  },
+  "get_records_by_field": {
+    "method": "GET",
+    "path": "/records/{field}"
+  },
+  "get_request_by_job_id": {
+    "method": "GET",
+    "path": "/request/{jobId}"
+  },
+  "get_scenarios_item_timings": {
+    "method": "GET",
+    "path": "/scenarios/itemTimings"
+  },
+  "get_scenarios_lane_roles": {
+    "method": "GET",
+    "path": "/scenarios/laneRoles"
+  },
+  "get_scenarios_misc": {
+    "method": "GET",
+    "path": "/scenarios/misc"
+  },
+  "get_schema": {
+    "method": "GET",
+    "path": "/schema"
+  },
+  "get_search": {
+    "method": "GET",
+    "path": "/search"
+  },
+  "get_teams": {
+    "method": "GET",
+    "path": "/teams"
+  },
+  "get_teams_by_team_id": {
+    "method": "GET",
+    "path": "/teams/{team_id}"
+  },
+  "get_teams_by_team_id_select_heroes": {
+    "method": "GET",
+    "path": "/teams/{team_id}/heroes"
+  },
+  "get_teams_by_team_id_select_matches": {
+    "method": "GET",
+    "path": "/teams/{team_id}/matches"
+  },
+  "get_teams_by_team_id_select_players": {
+    "method": "GET",
+    "path": "/teams/{team_id}/players"
+  },
+  "get_top_players": {
+    "method": "GET",
+    "path": "/topPlayers"
+  },
+  "post_refresh": {
+    "method": "POST",
+    "path": "/players/{account_id}/refresh"
+  },
+  "post_request_by_job_id": {
+    "method": "POST",
+    "path": "/request/{match_id}"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "name": "@reino-doce/opendota-client",
+  "version": "0.1.0",
+  "description": "Typed Node.js client for the documented OpenDota API.",
+  "license": "ISC",
+  "type": "module",
+  "engines": {
+    "node": ">=24.21.0 <25",
+    "npm": ">=12.1.0"
+  },
+  "packageManager": "npm@12.1.0",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE.md",
+    "spec/NOTICE.md",
+    "docs"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "node scripts/generate.mjs && tsc -p tsconfig.json",
+    "build:types": "tsc -p tsconfig.json",
+    "generate": "node scripts/generate.mjs",
+    "generate:check": "node scripts/generate.mjs --check",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:consumer": "tsc -p tsconfig.consumer.json --noEmit",
+    "lint": "eslint src scripts tests examples eslint.config.mjs",
+    "test": "npm run build && npm run typecheck:consumer && node --test tests/*.test.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.10.1",
+    "eslint": "10.11.0",
+    "globals": "17.12.0",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.0"
+  }
+}
