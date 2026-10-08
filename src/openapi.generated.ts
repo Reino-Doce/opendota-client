@@ -3096,7 +3096,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': components['schemas']['PlayerObjectResponse'][][];
+                    'application/json; charset=utf-8': {
+                        /** Format: opendota-decimal-id */
+                        account_id?: DecimalId;
+                        games_played?: number;
+                        wins?: number;
+                    }[];
                 };
             };
         };
@@ -3159,7 +3164,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': components['schemas']['LeagueObjectResponse'][];
+                    'application/json; charset=utf-8': components['schemas']['LeagueObjectResponse'];
                 };
             };
         };
@@ -3182,7 +3187,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': components['schemas']['MatchObjectResponse'];
+                    'application/json; charset=utf-8': components['schemas']['MatchObjectResponse'][];
                 };
             };
         };
@@ -3228,7 +3233,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': components['schemas']['TeamObjectResponse'];
+                    'application/json; charset=utf-8': components['schemas']['TeamObjectResponse'][];
                 };
             };
         };
@@ -4177,7 +4182,7 @@ export interface operations {
                 content: {
                     'application/json; charset=utf-8': {
                         [key: string]: unknown;
-                    };
+                    } | null;
                 };
             };
         };
@@ -4386,7 +4391,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': components['schemas']['TeamHeroesResponse'];
+                    'application/json; charset=utf-8': {
+                        games_played?: number;
+                        hero_id?: number;
+                        localized_name?: string;
+                        wins?: number;
+                    }[];
                 };
             };
         };
@@ -4409,7 +4419,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': components['schemas']['TeamMatchObjectResponse'];
+                    'application/json; charset=utf-8': components['schemas']['TeamMatchObjectResponse'][];
                 };
             };
         };
@@ -4432,7 +4442,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json; charset=utf-8': components['schemas']['TeamPlayersResponse'];
+                    'application/json; charset=utf-8': components['schemas']['TeamPlayersResponse'][];
                 };
             };
         };

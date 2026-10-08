@@ -139,6 +139,44 @@ test('coalesces identical requests while allowing one caller to cancel independe
     }
 });
 
+test('keys cached and coalesced GETs by resolved path parameters', async () => {
+    let cacheCalls = 0;
+    const cachedClient = clientWith(async (url) => {
+        cacheCalls += 1;
+        return Response.json({ account_id: new URL(url).pathname.split('/').at(-1) });
+    }, { cacheTtlMs: 5_000 });
+    try {
+        const first = await cachedClient.get('/players/{account_id}', { path: { account_id: '111' } });
+        const second = await cachedClient.get('/players/{account_id}', { path: { account_id: '222' } });
+        const cachedFirst = await cachedClient.get('/players/{account_id}', { path: { account_id: '111' } });
+        assert.equal(first.data.account_id, '111');
+        assert.equal(second.data.account_id, '222');
+        assert.equal(cachedFirst.data.account_id, '111');
+        assert.equal(cachedFirst.meta.cacheStatus, 'hit');
+        assert.equal(cacheCalls, 2);
+    } finally {
+        cachedClient.close();
+    }
+
+    let concurrentCalls = 0;
+    const uncachedClient = clientWith(async (url) => {
+        concurrentCalls += 1;
+        await new Promise((resolve) => setImmediate(resolve));
+        return Response.json({ match_id: new URL(url).pathname.split('/').at(-1) });
+    });
+    try {
+        const [first, second] = await Promise.all([
+            uncachedClient.get('/matches/{match_id}', { path: { match_id: '333' }, cache: false }),
+            uncachedClient.get('/matches/{match_id}', { path: { match_id: '444' }, cache: false }),
+        ]);
+        assert.equal(first.data.match_id, '333');
+        assert.equal(second.data.match_id, '444');
+        assert.equal(concurrentCalls, 2);
+    } finally {
+        uncachedClient.close();
+    }
+});
+
 test('aborts shared transport after every coalesced caller cancels', async () => {
     let fetchSignal;
     const client = clientWith((_url, init) => new Promise((_resolve, reject) => {
@@ -157,6 +195,47 @@ test('aborts shared transport after every coalesced caller cancels', async () =>
             assert.rejects(second, (error) => error instanceof OpenDotaError && error.code === 'aborted'),
         ]);
         assert.equal(fetchSignal.aborted, true);
+    } finally {
+        client.close();
+    }
+});
+
+test('starts a fresh request after every subscriber aborts and keeps its replacement coalesced', async () => {
+    let calls = 0;
+    let announceFirstStart;
+    let announceReplacementStart;
+    let releaseReplacement;
+    const firstStarted = new Promise((resolve) => { announceFirstStart = resolve; });
+    const replacementStarted = new Promise((resolve) => { announceReplacementStart = resolve; });
+    const client = clientWith((_url, init) => {
+        calls += 1;
+        if (calls === 1) {
+            announceFirstStart();
+            return new Promise((_resolve, reject) => {
+                init.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')), { once: true });
+            });
+        }
+        announceReplacementStart();
+        return new Promise((resolve) => { releaseReplacement = () => resolve(Response.json({ call: 2 })); });
+    });
+    const abort = new AbortController();
+    try {
+        const cancelled = client.get('/metadata', { signal: abort.signal });
+        await firstStarted;
+        abort.abort();
+        const replacement = client.get('/metadata', {});
+        await replacementStarted;
+        await assert.rejects(cancelled, (error) => error instanceof OpenDotaError && error.code === 'aborted');
+        await new Promise((resolve) => setImmediate(resolve));
+
+        const coalesced = client.get('/metadata', {});
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.equal(calls, 2);
+        releaseReplacement();
+        const [replacementResult, coalescedResult] = await Promise.all([replacement, coalesced]);
+        assert.deepEqual(replacementResult.data, { call: 2 });
+        assert.deepEqual(coalescedResult.data, { call: 2 });
+        assert.equal(coalescedResult.meta.cacheStatus, 'coalesced');
     } finally {
         client.close();
     }
@@ -260,6 +339,27 @@ test('rejects numeric parsing-job identifiers before issuing a request', async (
         await assert.rejects(client.get('/request/{jobId}', { path: { jobId: 9007199254740992 } }),
             (error) => error instanceof OpenDotaError && error.code === 'invalid-input');
         assert.equal(calls, 0);
+    } finally {
+        client.close();
+    }
+});
+
+test('normalizes parse-job status IDs without changing ordinary id fields', async () => {
+    const responses = [
+        Response.json({ job: { jobId: 123 } }),
+        Response.json({ id: 123, jobId: 123, state: 'completed' }),
+        Response.json({ id: 123 }),
+    ];
+    const client = clientWith(async () => responses.shift());
+    try {
+        const submitted = await client.post('/request/{match_id}', { path: { match_id: '456' } });
+        assert.equal(submitted.data.job.jobId, '123');
+
+        const status = await client.get('/request/{jobId}', { path: { jobId: submitted.data.job.jobId } });
+        assert.deepEqual(status.data, { id: '123', jobId: '123', state: 'completed' });
+
+        const ordinaryId = await client.get('/metadata', {});
+        assert.equal(ordinaryId.data.id, 123);
     } finally {
         client.close();
     }

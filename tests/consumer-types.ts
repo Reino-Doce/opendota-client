@@ -56,6 +56,19 @@ void [directRequestOptions, returnedMatchId, returnedRecentMatchId, optionalBenc
     unknownExplorerRows, unknownJobState, parseJobResponse, refreshResponse, safeError, responseAlias, health, live, explorerResponseCanCarryFields,
     healthResponseCanCarryFields, liveResponseCanCarryFields, jobStatusCanCarryFields, findMatchCanCarryFields];
 
+// @ts-expect-error Missing parse jobs return null, so callers must check before reading fields.
+const unguardedJobStatusId: unknown = status.data.jobId;
+const nullableJobStatus: unknown = status.data?.jobId;
+const leagueTeams = await client.get('/leagues/{league_id}/teams', { path: { league_id: '123' } });
+leagueTeams.data.map((team) => team.team_id);
+const teamMatches = await client.get('/teams/{team_id}/matches', { path: { team_id: '123' } });
+teamMatches.data.map((match) => match.match_id);
+
+// @ts-expect-error Player refresh is a POST operation.
+client.get('/players/{account_id}/refresh', { path: { account_id: accountId } });
+// @ts-expect-error Match details are a GET operation.
+client.post('/matches/{match_id}', { path: { match_id: matchId } });
+
 // @ts-expect-error Account identifiers are decimal strings, not JavaScript numbers.
 client.get('/matches/{match_id}', { path: { match_id: unsafeNumericMatchId } });
 // @ts-expect-error Hero identifiers are numeric rather than opaque decimal strings.
@@ -65,4 +78,6 @@ client.post('/request/{match_id}', { path: { match_id: matchId }, body: { force:
 // @ts-expect-error The SQL parameter is required by the actual OpenDota operation.
 client.get('/explorer', {});
 
+void nullableJobStatus;
+void unguardedJobStatusId;
 client.close();

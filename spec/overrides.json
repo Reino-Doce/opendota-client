@@ -24,8 +24,12 @@
     "dire_team_id",
     "opposing_team_id",
     "league_id",
-    "leagueid"
+    "leagueid",
+    "jobId"
   ],
+  "decimalIdResponseProperties": {
+    "/request/{jobId}": ["id"]
+  },
   "arrayParameters": {
     "excludedAccountIdParam": "integer",
     "includedAccountIdParam": "integer",
@@ -52,6 +56,54 @@
   },
   "responseItemReferences": {
     "/players/{account_id}/recentMatches": "#/components/schemas/PlayerRecentMatchesResponse"
+  },
+  "responseSchemaOverrides": {
+    "/request/{jobId}": {
+      "type": "object",
+      "nullable": true
+    },
+    "/heroes/{hero_id}/players": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "integer" },
+          "games_played": { "type": "integer" },
+          "wins": { "type": "integer" }
+        }
+      }
+    },
+    "/leagues/{league_id}": {
+      "$ref": "#/components/schemas/LeagueObjectResponse"
+    },
+    "/leagues/{league_id}/matches": {
+      "type": "array",
+      "items": { "$ref": "#/components/schemas/MatchObjectResponse" }
+    },
+    "/leagues/{league_id}/teams": {
+      "type": "array",
+      "items": { "$ref": "#/components/schemas/TeamObjectResponse" }
+    },
+    "/teams/{team_id}/matches": {
+      "type": "array",
+      "items": { "$ref": "#/components/schemas/TeamMatchObjectResponse" }
+    },
+    "/teams/{team_id}/players": {
+      "type": "array",
+      "items": { "$ref": "#/components/schemas/TeamPlayersResponse" }
+    },
+    "/teams/{team_id}/heroes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "hero_id": { "type": "integer" },
+          "localized_name": { "type": "string" },
+          "games_played": { "type": "integer" },
+          "wins": { "type": "integer" }
+        }
+      }
+    }
   },
   "repeatedArrayPaths": [
     "/findMatches"

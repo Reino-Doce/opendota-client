@@ -6,7 +6,9 @@ export type JsonValue = string | number | boolean | null | JsonValue[] | { [key:
 export type Operation = (typeof supportedOperations)[number];
 export type HttpMethod = 'get' | 'post';
 export type Route<Method extends HttpMethod> = {
-    [Path in keyof paths]: Method extends keyof paths[Path] ? Path : never;
+    [Path in keyof paths]: Method extends keyof paths[Path]
+        ? [NonNullable<paths[Path][Method]>] extends [never] ? never : Path
+        : never;
 }[keyof paths] & string;
 
 type OperationAt<Path extends keyof paths, Method extends keyof paths[Path]> = paths[Path][Method];

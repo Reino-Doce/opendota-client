@@ -97,6 +97,12 @@ for (const [path, pathItem] of Object.entries(patchedSpec.paths)) {
     for (const method of ['get', 'post']) {
         const operation = pathItem[method];
         if (!operation) continue;
+        const responseSchemaOverride = overrides.responseSchemaOverrides[path];
+        if (responseSchemaOverride) {
+            const media = operation.responses?.['200']?.content?.['application/json; charset=utf-8'];
+            if (!media) throw new Error(`Missing success response schema for ${method.toUpperCase()} ${path}.`);
+            media.schema = structuredClone(responseSchemaOverride);
+        }
         for (const response of Object.values(operation.responses ?? {})) {
             for (const media of Object.values(response.content ?? {})) markSchema(media.schema);
         }
@@ -174,6 +180,8 @@ const generatedAst = await openapiTS(patchedSpec, {
 const generatedPaths = `${astToString(generatedAst).replaceAll('"', "'").trimEnd()}\n`;
 const generatedOperations = `export const apiContractVersion = ${JSON.stringify(contract.version)};\n\nexport const supportedOperations = ${JSON.stringify(operations, null, 2)} as const;\n`;
 const generatedRuntimeOverrides = `export const runtimeOverrides = ${JSON.stringify({
+    decimalIdProperties: overrides.decimalIdProperties,
+    decimalIdResponseProperties: overrides.decimalIdResponseProperties,
     decimalIdArrayResponses: overrides.decimalIdArrayResponses,
     numericBooleanQueryParameters: overrides.numericBooleanQueryParameters,
     omitFalseQueryParameters: overrides.omitFalseQueryParameters,

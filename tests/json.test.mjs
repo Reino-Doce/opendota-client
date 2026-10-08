@@ -36,7 +36,7 @@ test('preserves partial match data and additive provider fields', () => {
 });
 
 test('keeps numeric hero identifiers and converts league match ID arrays', () => {
-    assert.deepEqual(parseLosslessJson('[9007199254740993123,0]', true), [
+    assert.deepEqual(parseLosslessJson('[9007199254740993123,0]', { decimalIdArrayResponse: true }), [
         '9007199254740993123',
         '0',
     ]);

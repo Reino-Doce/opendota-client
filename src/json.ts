@@ -1,28 +1,15 @@
 import { OpenDotaError } from './errors.js';
+import { runtimeOverrides } from './runtime-overrides.generated.js';
 import type { JsonValue } from './types.js';
 
-const decimalIdFields = new Set([
-    'account_id',
-    'included_account_id',
-    'excluded_account_id',
-    'match_id',
-    'match_seq_num',
-    'steamid',
-    'steam_id',
-    'lobby_id',
-    'server_id',
-    'server_steam_id',
-    'game_server_id',
-    'watch_server_id',
-    'team_id',
-    'radiant_team_id',
-    'dire_team_id',
-    'opposing_team_id',
-    'league_id',
-    'leagueid',
-]);
+const decimalIdFields = new Set<string>(runtimeOverrides.decimalIdProperties);
 
-export function parseLosslessJson(text: string, decimalIdArrayResponse = false): JsonValue {
+interface JsonParseOptions {
+    readonly decimalIdArrayResponse?: boolean;
+    readonly decimalIdProperties?: readonly string[];
+}
+
+export function parseLosslessJson(text: string, options: JsonParseOptions = {}): JsonValue {
     let parsed: unknown;
     try {
         parsed = JSON.parse(text, (key: string, value: unknown, context?: { source?: string }) => {
@@ -34,32 +21,35 @@ export function parseLosslessJson(text: string, decimalIdArrayResponse = false):
     } catch {
         throw new OpenDotaError({ code: 'invalid-response' });
     }
-    if (decimalIdArrayResponse && Array.isArray(parsed)) {
-        return parsed.map(normalizeDecimalIdArrayEntry) as JsonValue;
+    const responseDecimalIdFields = options.decimalIdProperties?.length
+        ? new Set([...decimalIdFields, ...options.decimalIdProperties])
+        : decimalIdFields;
+    if (options.decimalIdArrayResponse && Array.isArray(parsed)) {
+        return parsed.map((entry) => normalizeDecimalIdArrayEntry(entry, responseDecimalIdFields)) as JsonValue;
     }
-    return normalizeIdentifiers(parsed) as JsonValue;
+    return normalizeIdentifiers(parsed, undefined, responseDecimalIdFields) as JsonValue;
 }
 
-function normalizeIdentifiers(value: unknown, key?: string): unknown {
+function normalizeIdentifiers(value: unknown, key?: string, idFields: ReadonlySet<string> = decimalIdFields): unknown {
     if (Array.isArray(value)) {
-        return value.map((entry) => normalizeIdentifiers(entry));
+        return value.map((entry) => normalizeIdentifiers(entry, undefined, idFields));
     }
     if (value && typeof value === 'object') {
         return Object.fromEntries(Object.entries(value).map(([childKey, child]) => [
             childKey,
-            normalizeIdentifiers(child, childKey),
+            normalizeIdentifiers(child, childKey, idFields),
         ]));
     }
     if (value === null || key === undefined) return value;
-    if (!decimalIdFields.has(key) || typeof value !== 'number' && typeof value !== 'string') return value;
+    if (!idFields.has(key) || typeof value !== 'number' && typeof value !== 'string') return value;
     const decimal = String(value);
     return /^\d+$/.test(decimal) ? decimal : value;
 }
 
-function normalizeDecimalIdArrayEntry(value: unknown): unknown {
+function normalizeDecimalIdArrayEntry(value: unknown, idFields: ReadonlySet<string>): unknown {
     if (typeof value === 'number' || typeof value === 'string') {
         const decimal = String(value);
         return /^\d+$/.test(decimal) ? decimal : value;
     }
-    return normalizeIdentifiers(value);
+    return normalizeIdentifiers(value, undefined, idFields);
 }

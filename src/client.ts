@@ -265,7 +265,7 @@ export class OpenDotaClient {
             }
         }
 
-        const cacheKey = createHash('sha256').update(`${this.#baseUrl.origin}${this.#baseUrl.pathname}|${method}|${path}|${queryKey}`).digest('hex');
+        const cacheKey = createHash('sha256').update(`${url.href}|${method}|${path}`).digest('hex');
         const ttl = options.cacheTtlMs ?? this.#cacheTtlMs;
         if (!Number.isSafeInteger(ttl) || ttl < 0) throw new OpenDotaError({ code: 'invalid-input', operationId });
         if (options.cache !== false && ttl > 0) {
@@ -279,7 +279,7 @@ export class OpenDotaClient {
         }
 
         const existing = this.#inFlight.get(cacheKey);
-        if (existing) {
+        if (existing && !existing.controller.signal.aborted) {
             return this.#subscribe(existing, operationId, options.signal).then((entry) =>
                 this.#wrapResult(entry, operationId, 'coalesced') as OpenDotaResult<ResponseData<Path, Method>>);
         }
@@ -310,7 +310,7 @@ export class OpenDotaClient {
             .finally(() => {
                 request.completed = true;
                 clearTimeout(deadlineTimer);
-                this.#inFlight.delete(cacheKey);
+                if (this.#inFlight.get(cacheKey) === request) this.#inFlight.delete(cacheKey);
                 this.#controllers.delete(controller);
             });
         request.promise = inFlightPromise;
@@ -429,7 +429,10 @@ export class OpenDotaClient {
                 if (status === 429) throw new OpenDotaError({ code: 'rate-limited', status, operationId, ...(retryAfterMs === undefined ? {} : { retryAfterMs }) });
                 throw new OpenDotaError({ code: 'http-error', status, operationId, ...(retryAfterMs === undefined ? {} : { retryAfterMs }) });
             }
-            const data = parseLosslessJson(raw, decimalIdArrayPaths.has(path));
+            const data = parseLosslessJson(raw, {
+                decimalIdArrayResponse: decimalIdArrayPaths.has(path),
+                decimalIdProperties: runtimeOverrides.decimalIdResponseProperties[path as keyof typeof runtimeOverrides.decimalIdResponseProperties],
+            });
             return {
                 data,
                 fetchedAt: new Date(this.#now()).toISOString(),
