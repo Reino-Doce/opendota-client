@@ -40,6 +40,7 @@ const defaultOptions = {
     retryBaseDelayMs: 250,
     cacheTtlMs: 0,
     maxCacheEntries: 256,
+    maxResponseBytes: 8 * 1024 * 1024,
 } as const;
 
 const identityPathKeys = new Set([
@@ -126,6 +127,42 @@ function rateLimitHeaders(response: Response): RateLimitHeaders {
     };
 }
 
+async function readResponseText(response: Response, maxResponseBytes: number, operationId: string): Promise<string> {
+    if (response.body === null) return '';
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (value === undefined) continue;
+            totalBytes += value.byteLength;
+            if (totalBytes > maxResponseBytes) {
+                void reader.cancel().catch(() => undefined);
+                throw new OpenDotaError({ code: 'response-too-large', status: response.status, operationId });
+            }
+            chunks.push(value);
+        }
+    } catch (error) {
+        if (error instanceof OpenDotaError) throw error;
+        throw new OpenDotaError({ code: 'network-error', operationId });
+    } finally {
+        try {
+            reader.releaseLock();
+        } catch {
+            // A pending read will release its lock when it settles after cancellation.
+        }
+    }
+    const bytes = new Uint8Array(totalBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+    }
+    return new TextDecoder().decode(bytes);
+}
+
 function stableQueryKey(search: URLSearchParams): string {
     return [...search.entries()].map(([key, value], index) => ({ key, value, index }))
         .sort((left, right) => left.key.localeCompare(right.key) || left.index - right.index)
@@ -155,6 +192,7 @@ export class OpenDotaClient {
     readonly #retryBaseDelayMs: number;
     readonly #cacheTtlMs: number;
     readonly #maxCacheEntries: number;
+    readonly #maxResponseBytes: number;
     readonly #queue: RequestQueue;
     readonly #inFlight = new Map<string, SharedRequest>();
     readonly #cache = new Map<string, CacheEntry>();
@@ -183,9 +221,11 @@ export class OpenDotaClient {
         this.#retryBaseDelayMs = options.retryBaseDelayMs ?? defaultOptions.retryBaseDelayMs;
         this.#cacheTtlMs = options.cacheTtlMs ?? defaultOptions.cacheTtlMs;
         this.#maxCacheEntries = options.maxCacheEntries ?? defaultOptions.maxCacheEntries;
+        this.#maxResponseBytes = options.maxResponseBytes ?? defaultOptions.maxResponseBytes;
         for (const numeric of [this.#attemptTimeoutMs, this.#requestDeadlineMs, this.#maxRetries, this.#retryBaseDelayMs, this.#cacheTtlMs, this.#maxCacheEntries]) {
             if (!Number.isSafeInteger(numeric) || numeric < 0) throw new OpenDotaError({ code: 'invalid-input' });
         }
+        if (!Number.isSafeInteger(this.#maxResponseBytes) || this.#maxResponseBytes < 1) throw new OpenDotaError({ code: 'invalid-input' });
         for (const numeric of [options.maxConcurrency ?? defaultOptions.maxConcurrency, options.maxQueuedRequests ?? defaultOptions.maxQueuedRequests, options.minimumRequestIntervalMs ?? defaultOptions.minimumRequestIntervalMs]) {
             if (!Number.isSafeInteger(numeric) || numeric < 0) throw new OpenDotaError({ code: 'invalid-input' });
         }
@@ -416,9 +456,7 @@ export class OpenDotaClient {
                 if (signal.aborted || this.#closed) throw new OpenDotaError({ code: 'aborted', operationId });
                 throw new OpenDotaError({ code: 'network-error', operationId });
             }
-            const raw = await response.text().catch(() => {
-                throw new OpenDotaError({ code: 'network-error', operationId });
-            });
+            const raw = await readResponseText(response, this.#maxResponseBytes, operationId);
             if (!response.ok) {
                 const status = response.status;
                 const retryAfterMs = retryAfter(response, this.#now());

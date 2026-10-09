@@ -6,6 +6,7 @@ export type OpenDotaErrorCode =
     | 'rate-limited'
     | 'http-error'
     | 'network-error'
+    | 'response-too-large'
     | 'invalid-response'
     | 'aborted'
     | 'timeout'
@@ -27,6 +28,7 @@ const safeMessages: Record<OpenDotaErrorCode, string> = {
     'rate-limited': 'OpenDota rate-limited this request.',
     'http-error': 'OpenDota returned an unsuccessful HTTP response.',
     'network-error': 'The OpenDota request failed before receiving a response.',
+    'response-too-large': 'OpenDota returned a response larger than the configured limit.',
     'invalid-response': 'OpenDota returned a response that was not valid JSON.',
     aborted: 'The OpenDota request was cancelled.',
     timeout: 'The OpenDota request exceeded its time limit.',

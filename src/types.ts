@@ -89,4 +89,5 @@ export interface ClientOptions {
     readonly retryBaseDelayMs?: number;
     readonly cacheTtlMs?: number;
     readonly maxCacheEntries?: number;
+    readonly maxResponseBytes?: number;
 }

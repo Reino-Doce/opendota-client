@@ -80,6 +80,54 @@ test('sends bearer credentials only in headers and returns safe metadata', async
     }
 });
 
+test('accepts a streamed response at the configured UTF-8 byte limit', async () => {
+    const body = JSON.stringify({ value: 'é' });
+    const maxResponseBytes = new TextEncoder().encode(body).byteLength;
+    const client = clientWith(async () => new Response(body), { maxResponseBytes });
+    try {
+        const result = await client.get('/metadata', {});
+        assert.deepEqual(result.data, { value: 'é' });
+    } finally {
+        client.close();
+    }
+});
+
+test('cancels an oversized chunked response and returns a safe error without retrying', async () => {
+    let calls = 0;
+    let cancelled = false;
+    const body = new ReadableStream({
+        start(controller) {
+            controller.enqueue(new TextEncoder().encode('{"secret":"'));
+            controller.enqueue(new TextEncoder().encode('private response body"}'));
+        },
+        cancel() {
+            cancelled = true;
+        },
+    });
+    const client = clientWith(async () => {
+        calls += 1;
+        return new Response(body, { status: 500 });
+    }, { maxResponseBytes: 16, maxRetries: 3 });
+    try {
+        await assert.rejects(client.get('/metadata', {}), (error) => {
+            assert.equal(error.code, 'response-too-large');
+            assert.equal(error.status, 500);
+            assert.equal(error.message.includes('private response body'), false);
+            return true;
+        });
+        assert.equal(cancelled, true);
+        assert.equal(calls, 1);
+    } finally {
+        client.close();
+    }
+});
+
+test('rejects invalid response byte limits', () => {
+    for (const maxResponseBytes of [0, -1, 1.5, Number.POSITIVE_INFINITY]) {
+        assert.throws(() => new OpenDotaClient({ maxResponseBytes }), (error) => error.code === 'invalid-input');
+    }
+});
+
 test('applies the operation-specific ID array response override', async () => {
     const client = clientWith(async () => new Response('[9007199254740993123,0]', { status: 200 }));
     try {
