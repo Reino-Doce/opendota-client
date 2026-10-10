@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import openapiTS, { astToString } from 'openapi-typescript';
 import ts from 'typescript';
+import { generateDocumentation } from './generate-docs.mjs';
 
 const root = new URL('../', import.meta.url);
 const specUrl = new URL('spec/openapi.json', root);
@@ -12,7 +13,6 @@ const overridesUrl = new URL('spec/overrides.json', root);
 const pathsUrl = new URL('src/openapi.generated.ts', root);
 const operationsUrl = new URL('src/operations.generated.ts', root);
 const runtimeOverridesUrl = new URL('src/runtime-overrides.generated.ts', root);
-const operationDocsUrl = new URL('docs/operations.md', root);
 const isCheck = process.argv.includes('--check');
 
 const rawSpec = await readFile(specUrl);
@@ -188,16 +188,7 @@ const generatedRuntimeOverrides = `export const runtimeOverrides = ${JSON.string
     requiredQueryParameters: overrides.requiredQueryParameters,
     stringPathParameters: overrides.stringPathParameters,
 }, null, 2)} as const;\n`;
-const generatedOperationDocs = [
-    '# OpenDota operation index',
-    '',
-    `Contract version ${contract.version}; generated from OpenAPI ${contract.openapi}.`,
-    '',
-    '| Method | Route | Operation | Description |',
-    '| --- | --- | --- | --- |',
-    ...operations.map(({ method, path, operationId, summary }) => `| ${method} | \`${path}\` | \`${operationId}\` | ${summary.replaceAll('|', '\\|')} |`),
-    '',
-].join('\n');
+const generatedDocumentation = generateDocumentation(patchedSpec, contract, operations);
 const generationHash = createHash('sha256').update(rawSpec).digest('hex');
 if (generationHash !== contract.sha256) throw new Error('The saved OpenDota schema hash does not match spec/contract.json.');
 
@@ -207,11 +198,12 @@ async function emit(url, contents) {
         if (existing !== contents) throw new Error(`${fileURLToPath(url)} is stale; run npm run generate.`);
         return;
     }
+    await mkdir(new URL('.', url), { recursive: true });
     await writeFile(url, contents, 'utf8');
 }
 
 await emit(pathsUrl, generatedPaths);
 await emit(operationsUrl, generatedOperations);
 await emit(runtimeOverridesUrl, generatedRuntimeOverrides);
-await emit(operationDocsUrl, generatedOperationDocs);
+for (const [path, contents] of generatedDocumentation) await emit(new URL(path, root), contents);
 process.stdout.write(`${isCheck ? 'Checked' : 'Generated'} ${operations.length} operations from OpenDota ${contract.version}.\n`);
